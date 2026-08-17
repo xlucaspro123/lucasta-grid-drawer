@@ -126,14 +126,10 @@ No external libraries required.
 
 ## License
 
-MIT © 2026 Lucasta / Absolute Lucasta
+MIT © 2026 Lucastahg
 
 Free to use, modify, distribute, and sell.  
 See [LICENSE](LICENSE) for full text.
 
 ---
-
-## Credits
-
-Created with **Absolute Lucasta** (Grok).  
-Built for creators who want a fast, local, zero-dependency grid drawer.
+Thanks For Using!
