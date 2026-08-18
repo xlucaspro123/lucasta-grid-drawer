@@ -1,0 +1,1294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#0b0b10" />
+  <title>Lucasta Grid Drawer — Mobile</title>
+  <style>
+    :root {
+      --bg: #0b0b10;
+      --panel: #12121a;
+      --panel2: #1a1a24;
+      --border: #2a2a38;
+      --accent: #4f8cff;
+      --accent-glow: rgba(79,140,255,0.3);
+      --text: #e8e8f2;
+      --muted: #7a7a92;
+      --danger: #ff5c6c;
+      --safe-b: env(safe-area-inset-bottom, 0px);
+      --safe-t: env(safe-area-inset-top, 0px);
+      --toolbar-h: 56px;
+      --bottom-h: 72px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    html, body {
+      height: 100%; height: 100dvh;
+      overflow: hidden;
+      font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      background: var(--bg); color: var(--text);
+      touch-action: none;
+      user-select: none; -webkit-user-select: none;
+    }
+
+    /* ===== TOP ===== */
+    .top {
+      height: calc(var(--toolbar-h) + var(--safe-t));
+      padding: var(--safe-t) 10px 0;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 6px;
+      flex-shrink: 0; z-index: 20;
+    }
+    .logo {
+      font-weight: 700; font-size: 13px; color: var(--accent);
+      display: flex; align-items: center; gap: 5px; margin-right: 4px;
+    }
+    .logo-dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--accent); box-shadow: 0 0 8px var(--accent);
+    }
+    .btn {
+      background: var(--panel2); border: 1px solid var(--border); color: var(--text);
+      padding: 8px 10px; border-radius: 8px; font-size: 12px; font-weight: 500;
+      min-height: 36px; display: inline-flex; align-items: center; justify-content: center;
+      gap: 4px; cursor: pointer;
+    }
+    .btn:active { transform: scale(0.96); background: #252536; }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .btn.icon { min-width: 36px; padding: 8px; }
+    .btn.ghost { background: transparent; border-color: transparent; }
+    .spacer { flex: 1; }
+    .zoom-lbl { font-size: 11px; color: var(--muted); min-width: 36px; text-align: center; }
+
+    /* ===== STAGE ===== */
+    .stage {
+      flex: 1; position: relative; overflow: hidden; background: #08080c;
+      min-height: 0;
+    }
+    #svg { width: 100%; height: 100%; display: block; touch-action: none; }
+    .hud {
+      position: absolute; bottom: 8px; left: 8px;
+      background: rgba(0,0,0,0.7); padding: 4px 8px; border-radius: 6px;
+      font-size: 10px; font-family: ui-monospace, monospace; color: var(--muted);
+      pointer-events: none; border: 1px solid rgba(255,255,255,0.06);
+    }
+
+    /* ===== BOTTOM TOOLBAR ===== */
+    .bottom {
+      height: calc(var(--bottom-h) + var(--safe-b));
+      padding-bottom: var(--safe-b);
+      background: var(--panel);
+      border-top: 1px solid var(--border);
+      display: flex; align-items: stretch; flex-shrink: 0; z-index: 20;
+    }
+    .tool-scroll {
+      flex: 1; display: flex; overflow-x: auto; gap: 4px;
+      padding: 8px 6px; -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .tool-scroll::-webkit-scrollbar { display: none; }
+    .tool {
+      flex: 0 0 auto;
+      min-width: 52px; height: 52px;
+      background: var(--panel2); border: 1.5px solid var(--border);
+      border-radius: 10px; color: var(--text);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 2px; font-size: 9px; padding: 4px;
+    }
+    .tool .ic { font-size: 18px; line-height: 1; }
+    .tool.active {
+      border-color: var(--accent); background: var(--accent-glow);
+      color: var(--accent); box-shadow: 0 0 12px rgba(79,140,255,0.25);
+    }
+    .side-btns {
+      display: flex; flex-direction: column; gap: 4px;
+      padding: 8px 6px 8px 0; border-left: 1px solid var(--border);
+    }
+    .side-btns .btn { min-width: 44px; height: 24px; font-size: 11px; padding: 0; }
+
+    /* ===== DRAWERS ===== */
+    .drawer-backdrop {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+      z-index: 40; opacity: 0; pointer-events: none; transition: opacity 0.2s;
+    }
+    .drawer-backdrop.show { opacity: 1; pointer-events: auto; }
+
+    .drawer {
+      position: fixed; z-index: 50;
+      background: var(--panel); border: 1px solid var(--border);
+      transition: transform 0.25s cubic-bezier(0.32, 0.72, 0, 1);
+      max-height: 85dvh; overflow-y: auto; -webkit-overflow-scrolling: touch;
+    }
+    .drawer-left {
+      top: 0; left: 0; bottom: 0; width: min(300px, 85vw);
+      border-radius: 0 16px 16px 0;
+      transform: translateX(-105%);
+      padding: 16px 14px;
+      padding-top: calc(16px + var(--safe-t));
+    }
+    .drawer-left.open { transform: translateX(0); }
+    .drawer-right {
+      top: 0; right: 0; bottom: 0; width: min(300px, 85vw);
+      border-radius: 16px 0 0 16px;
+      transform: translateX(105%);
+      padding: 16px 14px;
+      padding-top: calc(16px + var(--safe-t));
+    }
+    .drawer-right.open { transform: translateX(0); }
+    .drawer-bottom {
+      left: 0; right: 0; bottom: 0;
+      border-radius: 16px 16px 0 0;
+      transform: translateY(105%);
+      padding: 12px 14px calc(14px + var(--safe-b));
+      max-height: 50dvh;
+    }
+    .drawer-bottom.open { transform: translateY(0); }
+
+    .drawer h3 {
+      font-size: 10px; text-transform: uppercase; letter-spacing: 1px;
+      color: var(--muted); margin: 12px 0 8px; font-weight: 600;
+    }
+    .drawer h3:first-child { margin-top: 0; }
+    .drawer-close {
+      position: absolute; top: calc(10px + var(--safe-t)); right: 10px;
+      width: 32px; height: 32px; border-radius: 8px;
+      background: var(--panel2); border: 1px solid var(--border);
+      color: var(--text); font-size: 16px;
+      display: flex; align-items: center; justify-content: center;
+    }
+
+    .row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+    .row label { font-size: 12px; color: var(--muted); min-width: 52px; }
+    input[type="color"] {
+      -webkit-appearance: none; width: 40px; height: 32px;
+      border: 1px solid var(--border); border-radius: 8px;
+      background: transparent; padding: 2px;
+    }
+    input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+    input[type="color"]::-webkit-color-swatch { border: none; border-radius: 5px; }
+    input[type="number"], input[type="text"] {
+      background: var(--panel2); border: 1px solid var(--border); color: var(--text);
+      padding: 8px 10px; border-radius: 8px; font-size: 14px; width: 100%;
+      outline: none; min-height: 40px;
+    }
+    .chk {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: var(--muted); margin: 8px 0; min-height: 36px;
+    }
+    input[type="checkbox"] { width: 18px; height: 18px; accent-color: var(--accent); }
+
+    .mode-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .mode-btn {
+      padding: 12px 8px; border-radius: 10px; border: 1.5px solid var(--border);
+      background: var(--panel2); color: var(--text); font-size: 12px;
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+    }
+    .mode-btn.active {
+      border-color: var(--accent); background: var(--accent-glow); color: var(--accent);
+    }
+
+    .field { margin-bottom: 10px; }
+    .field > label {
+      display: block; font-size: 10px; color: var(--muted);
+      margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.5px;
+    }
+    .field-row { display: flex; gap: 8px; }
+    .field-row .field { flex: 1; }
+
+    .obj-list {
+      max-height: 160px; overflow-y: auto; background: var(--panel2);
+      border: 1px solid var(--border); border-radius: 8px; padding: 4px;
+    }
+    .obj-item {
+      padding: 10px 10px; border-radius: 8px; font-size: 13px;
+      display: flex; align-items: center; gap: 8px; color: var(--muted);
+      min-height: 40px;
+    }
+    .obj-item.selected { background: var(--accent-glow); color: var(--accent); }
+    .obj-item .dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    .btn-row { display: flex; gap: 8px; margin-top: 8px; }
+    .btn-row .btn { flex: 1; min-height: 42px; font-size: 13px; }
+
+    .layout {
+      display: flex; flex-direction: column; height: 100%; height: 100dvh;
+    }
+
+    /* SVG helpers */
+    .sel-box { fill: none; stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 5 3; pointer-events: none; }
+    .handle { fill: var(--accent); stroke: #fff; stroke-width: 1.5; }
+    .rot-handle { fill: #2ed573; stroke: #fff; stroke-width: 1.5; }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <!-- TOP -->
+    <div class="top">
+      <button class="btn icon ghost" id="btnMenu" aria-label="Menú">☰</button>
+      <div class="logo"><div class="logo-dot"></div> Lucasta</div>
+      <button class="btn icon" id="btnUndo">↶</button>
+      <button class="btn icon" id="btnRedo">↷</button>
+      <div class="spacer"></div>
+      <button class="btn icon" id="btnZoomOut">−</button>
+      <span class="zoom-lbl" id="zoomLabel">100%</span>
+      <button class="btn icon" id="btnZoomIn">+</button>
+      <button class="btn icon" id="btnProps" aria-label="Propiedades">⚙</button>
+    </div>
+
+    <!-- STAGE -->
+    <div class="stage" id="stage">
+      <svg id="svg" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="gridPat" width="32" height="32" patternUnits="userSpaceOnUse">
+            <path d="M 32 0 L 0 0 0 32" fill="none" stroke="#16161f" stroke-width="1"/>
+          </pattern>
+          <filter id="strokeGlow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur in="SourceGraphic" stdDeviation="1.2" result="blur"/>
+            <feMerge>
+              <feMergeNode in="blur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+        <g id="world">
+          <rect id="gridBg" x="-8000" y="-8000" width="16000" height="16000" fill="url(#gridPat)" />
+          <g id="objects"></g>
+          <g id="preview"></g>
+          <g id="selection"></g>
+        </g>
+      </svg>
+      <div class="hud" id="hud">0 obj · 100%</div>
+    </div>
+
+    <!-- BOTTOM TOOLS -->
+    <div class="bottom">
+      <div class="tool-scroll" id="toolScroll">
+        <button class="tool active" data-tool="select"><span class="ic">⬚</span>Sel</button>
+        <button class="tool" data-tool="pencil"><span class="ic">✎</span>Lápiz</button>
+        <button class="tool" data-tool="line"><span class="ic">╱</span>Línea</button>
+        <button class="tool" data-tool="bezier"><span class="ic">∿</span>Bézier</button>
+        <button class="tool" data-tool="rect"><span class="ic">□</span>Cuadro</button>
+        <button class="tool" data-tool="triangle"><span class="ic">△</span>Tri</button>
+        <button class="tool" data-tool="circle"><span class="ic">○</span>Círculo</button>
+        <button class="tool" data-tool="pixel"><span class="ic">▦</span>Pixel</button>
+        <button class="tool" data-tool="text"><span class="ic">T</span>Texto</button>
+        <button class="tool" data-tool="eraser"><span class="ic">⌫</span>Borrar</button>
+        <button class="tool" data-tool="pan"><span class="ic">✋</span>Pan</button>
+      </div>
+      <div class="side-btns">
+        <button class="btn" id="btnStyle">Style</button>
+        <button class="btn primary" id="btnSaveQuick">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BACKDROP -->
+  <div class="drawer-backdrop" id="backdrop"></div>
+
+  <!-- LEFT DRAWER: file + style + view -->
+  <div class="drawer drawer-left" id="drawerLeft">
+    <button class="drawer-close" data-close>×</button>
+    <h3>Archivo</h3>
+    <div class="field">
+      <label>Nombre</label>
+      <input type="text" id="projectName" value="mi_dibujo" />
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="btnNew">Nuevo</button>
+      <button class="btn" id="btnOpen">Abrir</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn primary" id="btnSave">Guardar .lgd</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="btnExport">PNG</button>
+      <button class="btn" id="btnClear" style="color:var(--danger)">Limpiar</button>
+    </div>
+
+    <h3>Estilo</h3>
+    <div class="row">
+      <label>Color</label>
+      <input type="color" id="strokeColor" value="#4f8cff" />
+      <label>Relleno</label>
+      <input type="color" id="fillColor" value="#4f8cff" />
+    </div>
+    <label class="chk"><input type="checkbox" id="fillShapes" /> Rellenar figuras</label>
+    <div class="row">
+      <label>Grosor</label>
+      <input type="number" id="strokeWidth" value="2.5" min="0.5" max="24" step="0.5" style="width:80px" />
+    </div>
+    <div class="row">
+      <label>Grid</label>
+      <input type="number" id="gridSize" value="32" min="8" max="128" step="8" style="width:80px" />
+    </div>
+
+    <h3>Lápiz / Path</h3>
+    <div class="mode-grid">
+      <button class="mode-btn active" id="modeLegacy"><span>━</span>Legacy</button>
+      <button class="mode-btn" id="modeSmooth"><span>∿</span>Smooth</button>
+    </div>
+
+    <h3>Vista</h3>
+    <label class="chk"><input type="checkbox" id="showGrid" checked /> Mostrar cuadrícula</label>
+    <label class="chk"><input type="checkbox" id="snapGrid" /> Snap a grid (off = free move/scale)</label>
+  </div>
+
+  <!-- RIGHT DRAWER: selection props -->
+  <div class="drawer drawer-right" id="drawerRight">
+    <button class="drawer-close" data-close>×</button>
+    <h3>Selección</h3>
+    <div class="field-row">
+      <div class="field"><label>X</label><input type="number" id="selX" value="0" /></div>
+      <div class="field"><label>Y</label><input type="number" id="selY" value="0" /></div>
+    </div>
+    <div class="field-row">
+      <div class="field"><label>Ancho</label><input type="number" id="selW" value="0" /></div>
+      <div class="field"><label>Alto</label><input type="number" id="selH" value="0" /></div>
+    </div>
+    <div class="field">
+      <label>Rotación °</label>
+      <input type="number" id="selRot" value="0" step="15" />
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="btnApply">Aplicar</button>
+      <button class="btn" id="btnDuplicate">Duplicar</button>
+    </div>
+    <div class="btn-row">
+      <button class="btn" id="btnDeleteSel" style="color:var(--danger)">Eliminar</button>
+    </div>
+
+    <h3>Objetos <span id="objCount" style="color:var(--muted)">(0)</span></h3>
+    <div class="obj-list" id="objList"></div>
+  </div>
+
+  <input type="file" id="fileInput" accept=".lgd,.json" style="display:none" />
+
+  <script>
+  // ============================================================
+  // LUCATA GRID DRAWER — Mobile / Tablet
+  // Touch-first, same .lgd ecosystem
+  // ============================================================
+
+  const svg = document.getElementById('svg');
+  const world = document.getElementById('world');
+  const objectsG = document.getElementById('objects');
+  const previewG = document.getElementById('preview');
+  const selectionG = document.getElementById('selection');
+  const gridBg = document.getElementById('gridBg');
+  const gridPat = document.getElementById('gridPat');
+
+  const state = {
+    tool: 'select', objects: [], selectedId: null,
+    camera: { x: 0, y: 0, zoom: 1 },
+    camTarget: { x: 0, y: 0, zoom: 1 },
+    gridSize: 32, showGrid: true, snap: false,
+    strokeColor: '#4f8cff', fillColor: '#4f8cff', fillShapes: false, strokeWidth: 2.5,
+    pencilMode: 'legacy',
+    isDrawing: false, isPanning: false, isDragging: false, isResizing: false, isRotating: false,
+    resizeHandle: null, startPos: null, currentPath: null, bezierPts: [],
+    history: [], historyIndex: -1,
+    mouse: { sx: 0, sy: 0, wx: 0, wy: 0 },
+    dragOffset: { x: 0, y: 0 }, lastPan: { x: 0, y: 0 },
+    rotStartAngle: 0, rotCenter: null,
+    pinchStartDist: 0, pinchStartZoom: 1, lastTouchMid: null,
+    dragTarget: null, resizeTarget: null,
+    smoothMove: true, camLerp: 0.22, objLerp: 0.35
+  };
+
+  let idCounter = 1;
+  function uid() { return 'o' + (idCounter++); }
+
+  function screenToWorld(sx, sy) {
+    return { x: sx / state.camera.zoom + state.camera.x, y: sy / state.camera.zoom + state.camera.y };
+  }
+
+  function getPointFromEvent(e) {
+    const rect = svg.getBoundingClientRect();
+    let clientX, clientY;
+    if (e.touches && e.touches.length) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else if (e.changedTouches && e.changedTouches.length) {
+      clientX = e.changedTouches[0].clientX;
+      clientY = e.changedTouches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
+    const sx = clientX - rect.left;
+    const sy = clientY - rect.top;
+    const w = screenToWorld(sx, sy);
+    return { sx, sy, wx: w.x, wy: w.y, clientX, clientY };
+  }
+
+  function touchDistance(t1, t2) {
+    const dx = t1.clientX - t2.clientX;
+    const dy = t1.clientY - t2.clientY;
+    return Math.hypot(dx, dy);
+  }
+  function touchMid(t1, t2) {
+    return { x: (t1.clientX + t2.clientX) / 2, y: (t1.clientY + t2.clientY) / 2 };
+  }
+
+  function snap(v) {
+    if (!state.snap) return v;
+    const g = state.gridSize || 32;
+    return Math.round(v / g) * g;
+  }
+  function coord(v) { return snap(v); }
+
+  function applyCamera() {
+    const { x, y, zoom } = state.camera;
+    world.setAttribute('transform', `scale(${zoom}) translate(${-x}, ${-y})`);
+    document.getElementById('zoomLabel').textContent = Math.round(zoom * 100) + '%';
+    updateHud();
+  }
+
+  function setCamTarget(x, y, zoom) {
+    if (x !== undefined) state.camTarget.x = x;
+    if (y !== undefined) state.camTarget.y = y;
+    if (zoom !== undefined) state.camTarget.zoom = Math.min(6, Math.max(0.15, zoom));
+  }
+
+  function tickSmooth() {
+    const cl = (state.isPanning || state.pinchStartDist > 0) ? 0.5 : state.camLerp;
+    const c = state.camera, t = state.camTarget;
+    c.x += (t.x - c.x) * cl;
+    c.y += (t.y - c.y) * cl;
+    c.zoom += (t.zoom - c.zoom) * cl;
+    if (Math.abs(t.x - c.x) < 0.02) c.x = t.x;
+    if (Math.abs(t.y - c.y) < 0.02) c.y = t.y;
+    if (Math.abs(t.zoom - c.zoom) < 0.0008) c.zoom = t.zoom;
+    applyCamera();
+
+    if (state.isDragging && state.selectedId && state.dragTarget && state.smoothMove) {
+      const obj = getSelected();
+      if (obj) {
+        const b = getBounds(obj);
+        moveObjectTo(obj, b.x + (state.dragTarget.x - b.x) * state.objLerp, b.y + (state.dragTarget.y - b.y) * state.objLerp);
+        rebuildSVG(); updateSelFields();
+      }
+    }
+    if (state.isResizing && state.selectedId && state.resizeTarget && state.smoothMove) {
+      const obj = getSelected();
+      if (obj && obj.type !== 'line' && obj.type !== 'path' && obj.type !== 'bezier') {
+        const rt = state.resizeTarget;
+        obj.x += (rt.x - obj.x) * state.objLerp;
+        obj.y += (rt.y - obj.y) * state.objLerp;
+        obj.w += (rt.w - obj.w) * state.objLerp;
+        obj.h += (rt.h - obj.h) * state.objLerp;
+        rebuildSVG(); updateSelFields();
+      }
+    }
+    requestAnimationFrame(tickSmooth);
+  }
+  requestAnimationFrame(tickSmooth);
+
+  function pushHistory() {
+    const s = JSON.stringify(state.objects);
+    state.history = state.history.slice(0, state.historyIndex + 1);
+    state.history.push(s);
+    if (state.history.length > 40) state.history.shift();
+    state.historyIndex = state.history.length - 1;
+  }
+  function undo() {
+    if (state.historyIndex <= 0) return;
+    state.historyIndex--;
+    state.objects = JSON.parse(state.history[state.historyIndex]);
+    state.selectedId = null; rebuildSVG(); updateUI();
+  }
+  function redo() {
+    if (state.historyIndex >= state.history.length - 1) return;
+    state.historyIndex++;
+    state.objects = JSON.parse(state.history[state.historyIndex]);
+    state.selectedId = null; rebuildSVG(); updateUI();
+  }
+
+  function getSelected() { return state.objects.find(o => o.id === state.selectedId) || null; }
+
+  function getBounds(obj) {
+    if (obj.type === 'line') {
+      return { x: Math.min(obj.x1, obj.x2), y: Math.min(obj.y1, obj.y2),
+               w: Math.abs(obj.x2 - obj.x1) || 1, h: Math.abs(obj.y2 - obj.y1) || 1 };
+    }
+    if (obj.type === 'path' || obj.type === 'bezier') {
+      let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+      obj.points.forEach(p => {
+        minX = Math.min(minX, p.x); minY = Math.min(minY, p.y);
+        maxX = Math.max(maxX, p.x); maxY = Math.max(maxY, p.y);
+      });
+      return { x: minX, y: minY, w: maxX - minX || 1, h: maxY - minY || 1 };
+    }
+    return { x: obj.x, y: obj.y, w: obj.w, h: obj.h };
+  }
+  function getCenter(obj) {
+    const b = getBounds(obj);
+    return { x: b.x + b.w / 2, y: b.y + b.h / 2 };
+  }
+
+  function hitTest(wx, wy) {
+    const pad = 14 / state.camera.zoom; // larger hit area for fingers
+    for (let i = state.objects.length - 1; i >= 0; i--) {
+      const o = state.objects[i];
+      const b = getBounds(o);
+      if (wx >= b.x - pad && wx <= b.x + b.w + pad && wy >= b.y - pad && wy <= b.y + b.h + pad)
+        return o;
+    }
+    return null;
+  }
+
+  function pointsToLinearPath(pts) {
+    if (!pts || pts.length < 2) return '';
+    let d = `M ${pts[0].x} ${pts[0].y}`;
+    for (let i = 1; i < pts.length; i++) d += ` L ${pts[i].x} ${pts[i].y}`;
+    return d;
+  }
+  function pointsToCubicPath(pts) {
+    if (!pts || pts.length < 2) return '';
+    if (pts.length === 2) return `M ${pts[0].x} ${pts[0].y} L ${pts[1].x} ${pts[1].y}`;
+    let d = `M ${pts[0].x} ${pts[0].y}`;
+    for (let i = 0; i < pts.length - 1; i++) {
+      const p0 = pts[Math.max(0, i - 1)];
+      const p1 = pts[i];
+      const p2 = pts[i + 1];
+      const p3 = pts[Math.min(pts.length - 1, i + 2)];
+      const cp1x = p1.x + (p2.x - p0.x) / 6;
+      const cp1y = p1.y + (p2.y - p0.y) / 6;
+      const cp2x = p2.x - (p3.x - p1.x) / 6;
+      const cp2y = p2.y - (p3.y - p1.y) / 6;
+      d += ` C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`;
+    }
+    return d;
+  }
+  function smoothPoints(pts, passes) {
+    if (!pts || pts.length < 3) return pts;
+    let result = pts.slice();
+    for (let p = 0; p < (passes || 2); p++) {
+      const next = [result[0]];
+      for (let i = 0; i < result.length - 1; i++) {
+        const a = result[i], b = result[i + 1];
+        next.push({ x: a.x * 0.75 + b.x * 0.25, y: a.y * 0.75 + b.y * 0.25 });
+        next.push({ x: a.x * 0.25 + b.x * 0.75, y: a.y * 0.25 + b.y * 0.75 });
+      }
+      next.push(result[result.length - 1]);
+      result = next;
+    }
+    return result;
+  }
+
+  function createSVGElement(obj) {
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    g.dataset.id = obj.id;
+    const rot = obj.rot || 0;
+    const c = getCenter(obj);
+    if (rot) g.setAttribute('transform', `rotate(${rot}, ${c.x}, ${c.y})`);
+
+    const stroke = obj.stroke || state.strokeColor;
+    const fill = obj.filled ? (obj.fill || state.fillColor) : 'none';
+    const sw = obj.thickness || state.strokeWidth;
+    let el;
+
+    if (obj.type === 'line') {
+      el = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      el.setAttribute('x1', obj.x1); el.setAttribute('y1', obj.y1);
+      el.setAttribute('x2', obj.x2); el.setAttribute('y2', obj.y2);
+      el.setAttribute('stroke', stroke); el.setAttribute('stroke-width', sw);
+      el.setAttribute('stroke-linecap', 'round');
+      el.setAttribute('vector-effect', 'non-scaling-stroke');
+    } else if (obj.type === 'rect') {
+      el = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      el.setAttribute('x', obj.x); el.setAttribute('y', obj.y);
+      el.setAttribute('width', Math.max(0.1, obj.w)); el.setAttribute('height', Math.max(0.1, obj.h));
+      el.setAttribute('stroke', stroke); el.setAttribute('stroke-width', sw);
+      el.setAttribute('fill', fill); el.setAttribute('rx', 1);
+    } else if (obj.type === 'triangle') {
+      el = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      el.setAttribute('points', `${obj.x+obj.w/2},${obj.y} ${obj.x+obj.w},${obj.y+obj.h} ${obj.x},${obj.y+obj.h}`);
+      el.setAttribute('stroke', stroke); el.setAttribute('stroke-width', sw);
+      el.setAttribute('fill', fill); el.setAttribute('stroke-linejoin', 'round');
+    } else if (obj.type === 'circle') {
+      el = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+      el.setAttribute('cx', obj.x + obj.w / 2);
+      el.setAttribute('cy', obj.y + obj.h / 2);
+      el.setAttribute('rx', Math.max(0.1, Math.abs(obj.w) / 2));
+      el.setAttribute('ry', Math.max(0.1, Math.abs(obj.h) / 2));
+      el.setAttribute('stroke', stroke); el.setAttribute('stroke-width', sw);
+      el.setAttribute('fill', fill);
+    } else if (obj.type === 'pixel') {
+      el = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      el.setAttribute('x', obj.x); el.setAttribute('y', obj.y);
+      el.setAttribute('width', obj.w); el.setAttribute('height', obj.h);
+      el.setAttribute('fill', stroke); el.setAttribute('stroke', 'none');
+    } else if (obj.type === 'text') {
+      el = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      el.setAttribute('x', obj.x);
+      el.setAttribute('y', obj.y + (obj.fontSize || 18));
+      el.setAttribute('fill', stroke);
+      el.setAttribute('font-size', obj.fontSize || 18);
+      el.setAttribute('font-family', 'system-ui,sans-serif');
+      el.setAttribute('font-weight', '600');
+      el.textContent = obj.text || 'Texto';
+      const hit = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      hit.setAttribute('x', obj.x); hit.setAttribute('y', obj.y);
+      hit.setAttribute('width', obj.w || 60); hit.setAttribute('height', obj.h || 24);
+      hit.setAttribute('fill', 'transparent');
+      g.appendChild(hit);
+    } else if (obj.type === 'path' || obj.type === 'bezier') {
+      el = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      const useSmooth = obj.type === 'bezier' || obj.smooth === true;
+      const d = useSmooth ? pointsToCubicPath(obj.points) : pointsToLinearPath(obj.points);
+      el.setAttribute('d', d || 'M 0 0');
+      el.setAttribute('stroke', stroke); el.setAttribute('stroke-width', sw);
+      el.setAttribute('fill', 'none');
+      el.setAttribute('stroke-linecap', 'round'); el.setAttribute('stroke-linejoin', 'round');
+      el.setAttribute('vector-effect', 'non-scaling-stroke');
+    }
+
+    if (el) { el.style.pointerEvents = 'stroke'; g.appendChild(el); }
+    return g;
+  }
+
+  function rebuildSVG() {
+    objectsG.innerHTML = '';
+    state.objects.forEach(obj => objectsG.appendChild(createSVGElement(obj)));
+    drawSelection();
+    updateHud();
+  }
+
+  function drawSelection() {
+    selectionG.innerHTML = '';
+    const obj = getSelected();
+    if (!obj) return;
+    const b = getBounds(obj);
+    const c = getCenter(obj);
+    const rot = obj.rot || 0;
+    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+    if (rot) g.setAttribute('transform', `rotate(${rot}, ${c.x}, ${c.y})`);
+
+    const box = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    box.setAttribute('x', b.x - 2); box.setAttribute('y', b.y - 2);
+    box.setAttribute('width', b.w + 4); box.setAttribute('height', b.h + 4);
+    box.setAttribute('class', 'sel-box');
+    g.appendChild(box);
+
+    // Larger handles for touch
+    const hs = Math.max(12, 14 / state.camera.zoom);
+    [{name:'nw',x:b.x,y:b.y},{name:'ne',x:b.x+b.w,y:b.y},{name:'sw',x:b.x,y:b.y+b.h},{name:'se',x:b.x+b.w,y:b.y+b.h}]
+    .forEach(h => {
+      const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      r.setAttribute('x', h.x - hs/2); r.setAttribute('y', h.y - hs/2);
+      r.setAttribute('width', hs); r.setAttribute('height', hs);
+      r.setAttribute('class', 'handle'); r.dataset.handle = h.name;
+      g.appendChild(r);
+    });
+
+    const rotY = b.y - Math.max(28, 32 / state.camera.zoom);
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', c.x); line.setAttribute('y1', b.y);
+    line.setAttribute('x2', c.x); line.setAttribute('y2', rotY);
+    line.setAttribute('stroke', '#2ed573'); line.setAttribute('stroke-width', 1.5 / state.camera.zoom);
+    g.appendChild(line);
+
+    const rc = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    rc.setAttribute('cx', c.x); rc.setAttribute('cy', rotY);
+    rc.setAttribute('r', Math.max(10, 12 / state.camera.zoom));
+    rc.setAttribute('class', 'rot-handle'); rc.dataset.handle = 'rotate';
+    g.appendChild(rc);
+
+    selectionG.appendChild(g);
+  }
+
+  function updateHud() {
+    document.getElementById('hud').textContent =
+      state.objects.length + ' obj · ' + Math.round(state.camera.zoom * 100) + '%';
+  }
+
+  function updateGrid() {
+    gridPat.setAttribute('width', state.gridSize);
+    gridPat.setAttribute('height', state.gridSize);
+    gridPat.querySelector('path').setAttribute('d', `M ${state.gridSize} 0 L 0 0 0 ${state.gridSize}`);
+    gridBg.style.display = state.showGrid ? 'block' : 'none';
+  }
+
+  function moveObjectTo(obj, nx, ny) {
+    if (obj.type === 'line') {
+      const dx = nx - Math.min(obj.x1, obj.x2);
+      const dy = ny - Math.min(obj.y1, obj.y2);
+      obj.x1 += dx; obj.x2 += dx; obj.y1 += dy; obj.y2 += dy;
+    } else if (obj.type === 'path' || obj.type === 'bezier') {
+      const b = getBounds(obj);
+      const dx = nx - b.x, dy = ny - b.y;
+      obj.points.forEach(p => { p.x += dx; p.y += dy; });
+    } else {
+      obj.x = nx; obj.y = ny;
+    }
+  }
+
+  // ---- Pointer unified (mouse + touch) ----
+  function onPointerDown(e) {
+    // Two-finger = pinch / pan
+    if (e.touches && e.touches.length === 2) {
+      state.isDrawing = false;
+      state.isDragging = false;
+      state.pinchStartDist = touchDistance(e.touches[0], e.touches[1]);
+      state.pinchStartZoom = state.camTarget.zoom;
+      state.lastTouchMid = touchMid(e.touches[0], e.touches[1]);
+      state.isPanning = true;
+      return;
+    }
+
+    const m = getPointFromEvent(e);
+    state.mouse = m;
+
+    if (state.tool === 'pan' || (e.button === 1)) {
+      state.isPanning = true;
+      state.lastPan = { x: m.clientX, y: m.clientY };
+      return;
+    }
+
+    if (state.tool === 'select') {
+      const obj = getSelected();
+      if (obj) {
+        const t = e.target;
+        if (t.dataset && t.dataset.handle === 'rotate') {
+          state.isRotating = true;
+          state.rotCenter = getCenter(obj);
+          state.rotStartAngle = Math.atan2(m.wy - state.rotCenter.y, m.wx - state.rotCenter.x) * 180 / Math.PI - (obj.rot || 0);
+          pushHistory();
+          return;
+        }
+        if (t.dataset && t.dataset.handle) {
+          state.isResizing = true;
+          state.resizeHandle = t.dataset.handle;
+          state.startPos = { bounds: { ...getBounds(obj) } };
+          pushHistory();
+          return;
+        }
+      }
+      const hit = hitTest(m.wx, m.wy);
+      if (hit) {
+        state.selectedId = hit.id;
+        state.isDragging = true;
+        const b = getBounds(hit);
+        state.dragOffset = { x: m.wx - b.x, y: m.wy - b.y };
+        pushHistory();
+      } else {
+        state.selectedId = null;
+      }
+      drawSelection(); updateUI();
+      return;
+    }
+
+    if (['line','rect','triangle','circle','pixel','text','pencil','bezier'].includes(state.tool)) {
+      let x = coord(m.wx), y = coord(m.wy);
+      if (state.tool === 'bezier') {
+        state.bezierPts.push({ x, y });
+        state.isDrawing = true;
+        if (state.bezierPts.length >= 4) finishBezier();
+        renderPreview();
+        return;
+      }
+      state.isDrawing = true;
+      state.startPos = { x, y };
+      if (state.tool === 'pencil') {
+        state.currentPath = {
+          id: uid(), type: 'path', points: [{ x, y }],
+          stroke: state.strokeColor, thickness: state.strokeWidth, rot: 0
+        };
+      }
+      if (state.tool === 'pixel') {
+        pushHistory();
+        state.objects.push({
+          id: uid(), type: 'pixel',
+          x: coord(m.wx), y: coord(m.wy),
+          w: state.gridSize, h: state.gridSize,
+          stroke: state.strokeColor, filled: true, rot: 0
+        });
+        state.isDrawing = false;
+        rebuildSVG(); updateUI();
+      }
+      return;
+    }
+
+    if (state.tool === 'eraser') {
+      const hit = hitTest(m.wx, m.wy);
+      if (hit) {
+        pushHistory();
+        state.objects = state.objects.filter(o => o.id !== hit.id);
+        if (state.selectedId === hit.id) state.selectedId = null;
+        rebuildSVG(); updateUI();
+      }
+    }
+  }
+
+  function onPointerMove(e) {
+    // Pinch zoom
+    if (e.touches && e.touches.length === 2) {
+      e.preventDefault();
+      const dist = touchDistance(e.touches[0], e.touches[1]);
+      const mid = touchMid(e.touches[0], e.touches[1]);
+      if (state.pinchStartDist > 0) {
+        const scale = dist / state.pinchStartDist;
+        state.camTarget.zoom = Math.min(6, Math.max(0.15, state.pinchStartZoom * scale));
+      }
+      if (state.lastTouchMid) {
+        const dx = (mid.x - state.lastTouchMid.x) / state.camera.zoom;
+        const dy = (mid.y - state.lastTouchMid.y) / state.camera.zoom;
+        state.camTarget.x -= dx;
+        state.camTarget.y -= dy;
+      }
+      state.lastTouchMid = mid;
+      return;
+    }
+
+    const m = getPointFromEvent(e);
+    state.mouse = m;
+    updateHud();
+
+    if (state.isPanning && !(e.touches && e.touches.length === 2)) {
+      const dx = (m.clientX - state.lastPan.x) / state.camera.zoom;
+      const dy = (m.clientY - state.lastPan.y) / state.camera.zoom;
+      state.camTarget.x -= dx; state.camTarget.y -= dy;
+      state.lastPan = { x: m.clientX, y: m.clientY };
+      return;
+    }
+
+    if (state.isRotating && state.selectedId) {
+      const obj = getSelected();
+      if (obj && state.rotCenter) {
+        const angle = Math.atan2(m.wy - state.rotCenter.y, m.wx - state.rotCenter.x) * 180 / Math.PI;
+        obj.rot = Math.round((angle - state.rotStartAngle) / 15) * 15;
+        rebuildSVG(); updateSelFields();
+      }
+      return;
+    }
+
+    if (state.isDragging && state.selectedId) {
+      // Free move (snap solo si checkbox ON)
+      let nx = m.wx - state.dragOffset.x, ny = m.wy - state.dragOffset.y;
+      if (state.snap) { nx = snap(nx); ny = snap(ny); }
+      state.dragTarget = { x: nx, y: ny };
+      // respuesta directa también
+      const obj = getSelected();
+      if (obj) { moveObjectTo(obj, nx, ny); rebuildSVG(); updateSelFields(); }
+      return;
+    }
+
+    if (state.isResizing && state.selectedId) {
+      const obj = getSelected();
+      if (!obj || obj.type === 'path' || obj.type === 'bezier') return;
+      const mx = coord(m.wx), my = coord(m.wy);
+      const hnd = state.resizeHandle;
+      if (obj.type === 'line') {
+        if (hnd === 'nw' || hnd === 'ne' || hnd === 'n') { obj.x1 = mx; obj.y1 = my; }
+        else { obj.x2 = mx; obj.y2 = my; }
+        rebuildSVG(); updateSelFields();
+        return;
+      }
+      const b = state.startPos.bounds;
+      let x = b.x, y = b.y, w = b.w, h = b.h;
+      if (hnd.includes('e')) w = Math.max(2, mx - x);
+      if (hnd.includes('s')) h = Math.max(2, my - y);
+      if (hnd.includes('w')) { w = Math.max(2, b.x + b.w - mx); x = mx; }
+      if (hnd.includes('n')) { h = Math.max(2, b.y + b.h - my); y = my; }
+      obj.x = x; obj.y = y; obj.w = w; obj.h = h;
+      state.resizeTarget = { x, y, w, h };
+      rebuildSVG(); updateSelFields();
+      return;
+    }
+
+    if (state.isDrawing || state.bezierPts.length) {
+      if (state.tool === 'pencil' && state.currentPath) {
+        const x = coord(m.wx), y = coord(m.wy);
+        const last = state.currentPath.points[state.currentPath.points.length - 1];
+        if (state.snap) {
+          if (x !== last.x || y !== last.y) state.currentPath.points.push({ x, y });
+        } else {
+          if (Math.hypot(x - last.x, y - last.y) > 2) state.currentPath.points.push({ x, y });
+        }
+      }
+      renderPreview();
+    }
+  }
+
+  function onPointerUp(e) {
+    if (e.touches && e.touches.length > 0) return; // still touching
+
+    state.pinchStartDist = 0;
+    state.lastTouchMid = null;
+
+    if (state.isPanning) {
+      state.isPanning = false;
+      return;
+    }
+    if (state.isDragging || state.isResizing || state.isRotating) {
+      if (state.isDragging && state.dragTarget && state.selectedId) {
+        const obj = getSelected();
+        if (obj) moveObjectTo(obj, state.dragTarget.x, state.dragTarget.y);
+      }
+      if (state.isResizing && state.resizeTarget && state.selectedId) {
+        const obj = getSelected();
+        if (obj && state.resizeTarget) {
+          obj.x = state.resizeTarget.x; obj.y = state.resizeTarget.y;
+          obj.w = state.resizeTarget.w; obj.h = state.resizeTarget.h;
+        }
+      }
+      state.isDragging = false; state.isResizing = false; state.isRotating = false;
+      state.dragTarget = null; state.resizeTarget = null;
+      rebuildSVG(); updateUI();
+      return;
+    }
+    if (!state.isDrawing) return;
+    if (state.tool === 'bezier') return;
+    if (!state.startPos) return;
+
+    const m = state.mouse;
+    const x1 = state.startPos.x, y1 = state.startPos.y;
+    let x2 = coord(m.wx), y2 = coord(m.wy);
+    let created = null;
+
+    if (state.tool === 'line') {
+      if (x2 === x1 && y2 === y1) { x2 = x1 + state.gridSize; y2 = y1; }
+      created = { id: uid(), type: 'line', x1, y1, x2, y2, stroke: state.strokeColor, thickness: state.strokeWidth, rot: 0 };
+    } else if (state.tool === 'rect') {
+      const x = Math.min(x1,x2), y = Math.min(y1,y2);
+      const w = Math.max(Math.abs(x2-x1), 4), h = Math.max(Math.abs(y2-y1), 4);
+      created = { id: uid(), type: 'rect', x, y, w, h, stroke: state.strokeColor, fill: state.fillColor, filled: state.fillShapes, thickness: state.strokeWidth, rot: 0 };
+    } else if (state.tool === 'triangle') {
+      const x = Math.min(x1,x2), y = Math.min(y1,y2);
+      const w = Math.max(Math.abs(x2-x1), 4), h = Math.max(Math.abs(y2-y1), 4);
+      created = { id: uid(), type: 'triangle', x, y, w, h, stroke: state.strokeColor, fill: state.fillColor, filled: state.fillShapes, thickness: state.strokeWidth, rot: 0 };
+    } else if (state.tool === 'circle') {
+      const x = Math.min(x1,x2), y = Math.min(y1,y2);
+      const w = Math.max(Math.abs(x2-x1), 4), h = Math.max(Math.abs(y2-y1), 4);
+      created = { id: uid(), type: 'circle', x, y, w, h, stroke: state.strokeColor, fill: state.fillColor, filled: state.fillShapes, thickness: state.strokeWidth, rot: 0 };
+    } else if (state.tool === 'text') {
+      const x = Math.min(x1,x2), y = Math.min(y1,y2);
+      let txt = window.prompt('Texto:', 'Nivel 1');
+      if (txt == null) txt = '';
+      txt = String(txt).trim() || 'Texto';
+      const fs = Math.max(14, Math.min(48, Math.abs(y2 - y1) || 18));
+      created = { id: uid(), type: 'text', x, y, w: Math.max(40, txt.length * fs * 0.55), h: fs * 1.3, text: txt, fontSize: fs, stroke: state.strokeColor, rot: 0 };
+    } else if (state.tool === 'pencil' && state.currentPath) {
+      const fx = coord(m.wx), fy = coord(m.wy);
+      const last = state.currentPath.points[state.currentPath.points.length - 1];
+      if (!last || last.x !== fx || last.y !== fy) {
+        state.currentPath.points.push({ x: fx, y: fy });
+      }
+      if (state.currentPath.points.length < 2) {
+        const p = state.currentPath.points[0];
+        state.currentPath.points.push({ x: p.x + (state.snap ? state.gridSize : 8), y: p.y });
+      }
+      if (state.pencilMode === 'smooth') {
+        state.currentPath.points = smoothPoints(state.currentPath.points, 2);
+        state.currentPath.smooth = true;
+      } else {
+        state.currentPath.smooth = false;
+      }
+      created = state.currentPath;
+      state.currentPath = null;
+    }
+
+    if (created) {
+      pushHistory();
+      state.objects.push(created);
+      state.history[state.historyIndex] = JSON.stringify(state.objects);
+    }
+
+    state.isDrawing = false; state.startPos = null; previewG.innerHTML = '';
+    rebuildSVG(); updateUI();
+  }
+
+  function finishBezier() {
+    if (state.bezierPts.length < 2) { state.bezierPts = []; state.isDrawing = false; previewG.innerHTML = ''; return; }
+    pushHistory();
+    state.objects.push({
+      id: uid(), type: 'bezier', points: state.bezierPts.slice(),
+      stroke: state.strokeColor, thickness: state.strokeWidth, rot: 0, smooth: true
+    });
+    state.bezierPts = []; state.isDrawing = false; previewG.innerHTML = '';
+    rebuildSVG(); updateUI();
+  }
+
+  function renderPreview() {
+    previewG.innerHTML = '';
+    const m = state.mouse;
+    const stroke = state.strokeColor, sw = state.strokeWidth;
+
+    if (state.tool === 'bezier' && state.bezierPts.length) {
+      const pts = [...state.bezierPts, { x: coord(m.wx), y: coord(m.wy) }];
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      let d = `M ${pts[0].x} ${pts[0].y}`;
+      for (let i = 1; i < pts.length; i++) d += ` L ${pts[i].x} ${pts[i].y}`;
+      path.setAttribute('d', d); path.setAttribute('stroke', stroke); path.setAttribute('stroke-width', sw);
+      path.setAttribute('fill', 'none'); path.setAttribute('stroke-dasharray', '6 4'); path.setAttribute('opacity', '0.7');
+      previewG.appendChild(path);
+      pts.forEach(p => {
+        const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        c.setAttribute('cx', p.x); c.setAttribute('cy', p.y);
+        c.setAttribute('r', 5 / state.camera.zoom); c.setAttribute('fill', '#2ed573');
+        previewG.appendChild(c);
+      });
+      return;
+    }
+
+    if (!state.startPos) return;
+    const x1 = state.startPos.x, y1 = state.startPos.y;
+    const x2 = coord(m.wx), y2 = coord(m.wy);
+
+    if (state.tool === 'line') {
+      const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      line.setAttribute('x1', x1); line.setAttribute('y1', y1); line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+      line.setAttribute('stroke', stroke); line.setAttribute('stroke-width', sw); line.setAttribute('opacity', '0.7');
+      previewG.appendChild(line);
+    } else if (state.tool === 'rect') {
+      const x = Math.min(x1,x2), y = Math.min(y1,y2), w = Math.abs(x2-x1), h = Math.abs(y2-y1);
+      const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      r.setAttribute('x', x); r.setAttribute('y', y); r.setAttribute('width', w); r.setAttribute('height', h);
+      r.setAttribute('stroke', stroke); r.setAttribute('stroke-width', sw);
+      r.setAttribute('fill', state.fillShapes ? state.fillColor : 'none'); r.setAttribute('opacity', '0.7');
+      previewG.appendChild(r);
+    } else if (state.tool === 'triangle') {
+      const x = Math.min(x1,x2), y = Math.min(y1,y2), w = Math.abs(x2-x1), h = Math.abs(y2-y1);
+      const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+      poly.setAttribute('points', `${x+w/2},${y} ${x+w},${y+h} ${x},${y+h}`);
+      poly.setAttribute('stroke', stroke); poly.setAttribute('stroke-width', sw);
+      poly.setAttribute('fill', state.fillShapes ? state.fillColor : 'none'); poly.setAttribute('opacity', '0.7');
+      previewG.appendChild(poly);
+    } else if (state.tool === 'circle') {
+      const x = Math.min(x1,x2), y = Math.min(y1,y2), w = Math.abs(x2-x1), h = Math.abs(y2-y1);
+      const ell = document.createElementNS('http://www.w3.org/2000/svg', 'ellipse');
+      ell.setAttribute('cx', x + w/2); ell.setAttribute('cy', y + h/2);
+      ell.setAttribute('rx', w/2); ell.setAttribute('ry', h/2);
+      ell.setAttribute('stroke', stroke); ell.setAttribute('stroke-width', sw);
+      ell.setAttribute('fill', state.fillShapes ? state.fillColor : 'none'); ell.setAttribute('opacity', '0.7');
+      previewG.appendChild(ell);
+    } else if (state.tool === 'pencil' && state.currentPath) {
+      const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      let d = '';
+      state.currentPath.points.forEach((p, i) => { d += (i===0?'M':'L') + p.x + ' ' + p.y + ' '; });
+      path.setAttribute('d', d); path.setAttribute('stroke', stroke); path.setAttribute('stroke-width', sw);
+      path.setAttribute('fill', 'none'); path.setAttribute('opacity', '0.8'); path.setAttribute('stroke-linecap', 'round');
+      previewG.appendChild(path);
+    }
+  }
+
+  // Events
+  svg.addEventListener('mousedown', onPointerDown);
+  svg.addEventListener('mousemove', onPointerMove);
+  window.addEventListener('mouseup', onPointerUp);
+
+  svg.addEventListener('touchstart', e => { e.preventDefault(); onPointerDown(e); }, { passive: false });
+  svg.addEventListener('touchmove', e => { e.preventDefault(); onPointerMove(e); }, { passive: false });
+  svg.addEventListener('touchend', e => { onPointerUp(e); });
+  svg.addEventListener('touchcancel', e => { onPointerUp(e); });
+
+  svg.addEventListener('dblclick', () => { if (state.tool === 'bezier' && state.bezierPts.length >= 2) finishBezier(); });
+  svg.addEventListener('contextmenu', e => e.preventDefault());
+
+  // Wheel still works on tablets with mouse
+  svg.addEventListener('wheel', e => {
+    e.preventDefault();
+    const m = getPointFromEvent(e);
+    const before = screenToWorld(m.sx, m.sy);
+    const factor = e.deltaY < 0 ? 1.12 : 1/1.12;
+    state.camera.zoom = Math.min(6, Math.max(0.15, state.camera.zoom * factor));
+    const after = screenToWorld(m.sx, m.sy);
+    state.camera.x += before.x - after.x; state.camera.y += before.y - after.y;
+    applyCamera(); drawSelection();
+  }, { passive: false });
+
+  // ---- UI ----
+  function setTool(name) {
+    state.tool = name;
+    document.querySelectorAll('.tool').forEach(b => b.classList.toggle('active', b.dataset.tool === name));
+  }
+  document.querySelectorAll('.tool').forEach(btn => {
+    btn.addEventListener('click', () => setTool(btn.dataset.tool));
+  });
+
+  function openDrawer(which) {
+    closeDrawers();
+    document.getElementById('backdrop').classList.add('show');
+    if (which === 'left') document.getElementById('drawerLeft').classList.add('open');
+    if (which === 'right') document.getElementById('drawerRight').classList.add('open');
+  }
+  function closeDrawers() {
+    document.getElementById('backdrop').classList.remove('show');
+    document.getElementById('drawerLeft').classList.remove('open');
+    document.getElementById('drawerRight').classList.remove('open');
+  }
+  document.getElementById('btnMenu').addEventListener('click', () => openDrawer('left'));
+  document.getElementById('btnProps').addEventListener('click', () => openDrawer('right'));
+  document.getElementById('btnStyle').addEventListener('click', () => openDrawer('left'));
+  document.getElementById('backdrop').addEventListener('click', closeDrawers);
+  document.querySelectorAll('[data-close]').forEach(b => b.addEventListener('click', closeDrawers));
+
+  document.getElementById('strokeColor').addEventListener('input', e => state.strokeColor = e.target.value);
+  document.getElementById('fillColor').addEventListener('input', e => state.fillColor = e.target.value);
+  document.getElementById('fillShapes').addEventListener('change', e => state.fillShapes = e.target.checked);
+  document.getElementById('strokeWidth').addEventListener('change', e => state.strokeWidth = +e.target.value || 2);
+  document.getElementById('gridSize').addEventListener('change', e => { state.gridSize = +e.target.value || 32; updateGrid(); });
+  document.getElementById('showGrid').addEventListener('change', e => { state.showGrid = e.target.checked; updateGrid(); });
+  document.getElementById('snapGrid').addEventListener('change', e => state.snap = e.target.checked);
+
+  function setPencilMode(mode) {
+    state.pencilMode = mode;
+    document.getElementById('modeLegacy').classList.toggle('active', mode === 'legacy');
+    document.getElementById('modeSmooth').classList.toggle('active', mode === 'smooth');
+  }
+  document.getElementById('modeLegacy').addEventListener('click', () => setPencilMode('legacy'));
+  document.getElementById('modeSmooth').addEventListener('click', () => setPencilMode('smooth'));
+
+  document.getElementById('btnUndo').addEventListener('click', undo);
+  document.getElementById('btnRedo').addEventListener('click', redo);
+  document.getElementById('btnZoomIn').addEventListener('click', () => {
+    setCamTarget(undefined, undefined, state.camTarget.zoom * 1.25);
+  });
+  document.getElementById('btnZoomOut').addEventListener('click', () => {
+    setCamTarget(undefined, undefined, state.camTarget.zoom / 1.25);
+  });
+
+  document.getElementById('btnNew').addEventListener('click', () => {
+    if (state.objects.length && !confirm('¿Nuevo dibujo?')) return;
+    state.objects = []; state.selectedId = null; state.history = []; state.historyIndex = -1;
+    pushHistory(); rebuildSVG(); updateUI(); closeDrawers();
+  });
+  document.getElementById('btnClear').addEventListener('click', () => {
+    if (!confirm('¿Limpiar todo?')) return;
+    pushHistory(); state.objects = []; state.selectedId = null; rebuildSVG(); updateUI();
+  });
+
+  function updateSelFields() {
+    const o = getSelected();
+    if (!o) {
+      ['selX','selY','selW','selH','selRot'].forEach(id => document.getElementById(id).value = 0);
+      return;
+    }
+    const b = getBounds(o);
+    document.getElementById('selX').value = Math.round(b.x);
+    document.getElementById('selY').value = Math.round(b.y);
+    document.getElementById('selW').value = Math.round(b.w);
+    document.getElementById('selH').value = Math.round(b.h);
+    document.getElementById('selRot').value = o.rot || 0;
+  }
+
+  document.getElementById('btnApply').addEventListener('click', () => {
+    const o = getSelected(); if (!o) return;
+    pushHistory();
+    const nx = +document.getElementById('selX').value, ny = +document.getElementById('selY').value;
+    const nw = +document.getElementById('selW').value, nh = +document.getElementById('selH').value;
+    const nr = +document.getElementById('selRot').value;
+    moveObjectTo(o, nx, ny);
+    if (o.type !== 'line' && o.type !== 'path' && o.type !== 'bezier') {
+      o.w = Math.max(1, nw); o.h = Math.max(1, nh);
+    }
+    o.rot = nr;
+    rebuildSVG();
+  });
+
+  document.getElementById('btnDuplicate').addEventListener('click', () => {
+    const o = getSelected(); if (!o) return;
+    pushHistory();
+    const copy = JSON.parse(JSON.stringify(o));
+    copy.id = uid();
+    moveObjectTo(copy, getBounds(copy).x + state.gridSize, getBounds(copy).y + state.gridSize);
+    state.objects.push(copy); state.selectedId = copy.id;
+    rebuildSVG(); updateUI();
+  });
+
+  document.getElementById('btnDeleteSel').addEventListener('click', () => {
+    if (!state.selectedId) return;
+    pushHistory();
+    state.objects = state.objects.filter(o => o.id !== state.selectedId);
+    state.selectedId = null; rebuildSVG(); updateUI();
+  });
+
+  function updateObjList() {
+    const list = document.getElementById('objList');
+    list.innerHTML = '';
+    document.getElementById('objCount').textContent = '(' + state.objects.length + ')';
+    state.objects.forEach(o => {
+      const item = document.createElement('div');
+      item.className = 'obj-item' + (o.id === state.selectedId ? ' selected' : '');
+      const dot = document.createElement('div');
+      dot.className = 'dot'; dot.style.background = o.stroke || '#4f8cff';
+      item.appendChild(dot);
+      item.appendChild(document.createTextNode(o.type + ' · ' + o.id));
+      item.onclick = () => { state.selectedId = o.id; drawSelection(); updateUI(); closeDrawers(); };
+      list.appendChild(item);
+    });
+  }
+  function updateUI() { updateSelFields(); updateObjList(); }
+
+  function doSave() {
+    const name = document.getElementById('projectName').value.trim() || 'untitled';
+    const data = {
+      format: 'lgd', version: 3.0, name,
+      created: new Date().toISOString(),
+      gridSize: state.gridSize, objects: state.objects, camera: state.camera
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = name + '.lgd';
+    a.click();
+  }
+  document.getElementById('btnSave').addEventListener('click', () => { doSave(); closeDrawers(); });
+  document.getElementById('btnSaveQuick').addEventListener('click', doSave);
+
+  document.getElementById('btnOpen').addEventListener('click', () => document.getElementById('fileInput').click());
+  document.getElementById('fileInput').addEventListener('change', e => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        state.objects = data.objects || [];
+        state.gridSize = data.gridSize || 32;
+        state.camera = data.camera || { x: 0, y: 0, zoom: 1 };
+        state.selectedId = null;
+        document.getElementById('projectName').value = data.name || 'mi_dibujo';
+        document.getElementById('gridSize').value = state.gridSize;
+        state.history = []; state.historyIndex = -1; pushHistory();
+        updateGrid(); applyCamera(); rebuildSVG(); updateUI();
+        closeDrawers();
+      } catch (err) { alert('Error: ' + err.message); }
+    };
+    reader.readAsText(file); e.target.value = '';
+  });
+
+  document.getElementById('btnExport').addEventListener('click', () => {
+    const clone = svg.cloneNode(true);
+    clone.setAttribute('width', svg.clientWidth); clone.setAttribute('height', svg.clientHeight);
+    const data = new XMLSerializer().serializeToString(clone);
+    const blob = new Blob([data], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = svg.clientWidth; c.height = svg.clientHeight;
+      const cx = c.getContext('2d');
+      cx.fillStyle = '#08080c'; cx.fillRect(0, 0, c.width, c.height);
+      cx.drawImage(img, 0, 0);
+      const a = document.createElement('a');
+      a.download = (document.getElementById('projectName').value || 'export') + '.png';
+      a.href = c.toDataURL('image/png'); a.click();
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+  });
+
+  // Prevent page scroll / bounce
+  document.body.addEventListener('touchmove', e => {
+    if (e.target.closest('.drawer')) return;
+    e.preventDefault();
+  }, { passive: false });
+
+  updateGrid(); applyCamera(); pushHistory(); rebuildSVG(); updateUI();
+  </script>
+</body>
+</html>

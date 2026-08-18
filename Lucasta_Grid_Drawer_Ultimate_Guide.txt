@@ -1,0 +1,182 @@
+================================================================================
+  LUCASTA GRID DRAWER — MANUAL DE USO (GOTY EDITION)
+================================================================================
+
+Editor vectorial + prototipo de niveles estilo Geometry Dash.
+Desktop: lucasta-grid-drawer.html
+Mobile:  lucasta-grid-drawer-mobile.html
+Formato: .lgd (JSON)
+
+--------------------------------------------------------------------------------
+1. PARA QUIEN EMPIEZA YA (30 SEGUNDOS)
+--------------------------------------------------------------------------------
+
+  1. Abre lucasta-grid-drawer.html en Chrome / Edge / Firefox
+  2. Lee la ventana de ayuda (o pulsa ?)
+  3. Herramienta CUADRO → arrastra una plataforma en el centro
+  4. Sidebar → Objetos GD → Block / Yellow orb
+  5. Click en el canvas para colocar
+  6. Boton PLAY → Espacio para saltar · R reinicia · Esc sale
+
+--------------------------------------------------------------------------------
+2. INTERFAZ
+--------------------------------------------------------------------------------
+
+  TOP BAR
+    Nuevo | Abrir | Guardar | Undo/Redo | Zoom | Ajustar | Play/Stop | PNG | ?
+
+  IZQUIERDA
+    Herramientas de dibujo
+    Estilo (color, grosor, grid, lapiz Legacy/Smooth)
+    Objetos GD (orbes, pads, portales, solidos)
+    Vista (grid on/off, snap)
+
+  CENTRO
+    Canvas SVG infinito
+
+  DERECHA
+    Nombre del proyecto
+    Propiedades X Y Ancho Alto Rotacion
+    Lista de objetos
+
+--------------------------------------------------------------------------------
+3. HERRAMIENTAS
+--------------------------------------------------------------------------------
+
+  Seleccionar (V)   Mover, escalar (handles), rotar (punto verde)
+  Lapiz (P)         Trazo libre. Legacy = recto. Smooth = curvas
+  Linea (L)         Segmento. Shift = horizontal/vertical
+  Bezier (B)        Clicks = puntos. Enter o doble click = terminar
+  Cuadro (R)        Rectangulo. Rellenar figuras = bloque solido
+  Triangulo (T)     En play = pincho
+  Circulo (C)       En play = orbe segun color de relleno
+  Dash orb (D)      Orbe verde con flecha (rota la flecha)
+  Pixel             Una celda del grid
+  Texto (X)         Click → escribe texto. Doble click = editar
+  Borrar (E)        Click o arrastra. Click derecho tambien borra
+  Vista (H)         Arrastra para panear. Rueda = zoom
+
+  Snap OFF = free move / free scale
+  Snap ON  = pega a la cuadricula
+  Shift    = proporciones / lineas H-V
+
+--------------------------------------------------------------------------------
+4. TEXTO
+--------------------------------------------------------------------------------
+
+  1. Elige Texto (tecla X)
+  2. Click en el canvas (arrastra para decidir tamano de fuente)
+  3. Escribe en el cuadro de dialogo
+  4. El color es el color de trazo actual
+  5. Doble click sobre el texto para editarlo
+  6. Con Seleccionar puedes moverlo y rotarlo
+
+--------------------------------------------------------------------------------
+5. OBJETOS GEOMETRY DASH
+--------------------------------------------------------------------------------
+
+  Menu "Objetos GD":
+
+  ORBES
+    Yellow  salto en el aire
+    Pink    salto debil
+    Red     salto fuerte
+    Blue    invierte gravedad
+    Green   gravedad + salto
+    Black   slam hacia abajo
+    Dash    impulso en direccion de la flecha
+
+  PADS (al tocar)
+    Pad Y / P / R / B
+
+  PORTALES
+    Ship     modo nave
+    Cube     vuelve a cubo
+    Gravity  invierte gravedad
+
+  SOLIDOS
+    Block    bloque 1x1
+    Spike    pincho
+
+  Como colocar:
+    1. Click en el item del menu (cursor "copy")
+    2. Click en el canvas
+    3. Repite para poner mas
+    4. Otra herramienta cancela el modo colocar
+
+  Activar orbes en Play: TOCAR el orbe y PULSAR salto (como GD real).
+
+--------------------------------------------------------------------------------
+6. PLAYTEST
+--------------------------------------------------------------------------------
+
+  Cubo
+    Tamano = 1 bloque (gridSize)
+    Auto-run a la derecha
+    Espacio / click = salto
+    Coyote + jump buffer
+
+  Nave (portal Ship)
+    Mantener salto = subir
+    Soltar = caer
+    Chocar con bloques = muerte
+
+  Controles
+    Espacio / W / Arriba / Click = salto / volar
+    R = respawn
+    Esc o Stop = salir
+
+--------------------------------------------------------------------------------
+7. SLOPES (RAMPAS)
+--------------------------------------------------------------------------------
+
+  Dibuja con Lapiz o Linea una rampa entre bloques.
+  En Play el cubo camina sobre esos trazos.
+
+--------------------------------------------------------------------------------
+8. GUARDAR Y COMPARTIR
+--------------------------------------------------------------------------------
+
+  Guardar .lgd   proyecto completo (objetos, grid, camara)
+  Abrir .lgd     restaura todo
+  Exportar PNG   captura visual
+
+  GitHub Pages:
+    https://USUARIO.github.io/REPO/lucasta-grid-drawer.html
+    Custom domain: dejar VACIO
+    Source: branch main / root
+
+--------------------------------------------------------------------------------
+9. MOBILE
+--------------------------------------------------------------------------------
+
+  Abre lucasta-grid-drawer-mobile.html
+  Toolbar abajo, menus laterales, pinch zoom
+  Compatible con el mismo .lgd
+
+--------------------------------------------------------------------------------
+10. ATAJOS
+--------------------------------------------------------------------------------
+
+  V P L B R T C D X E H
+  Ctrl+Z  undo
+  Ctrl+Y  redo
+  Delete  borrar seleccion
+  ? o F1  ayuda
+  Esc     salir play / cancelar
+
+--------------------------------------------------------------------------------
+11. CONSEJOS
+--------------------------------------------------------------------------------
+
+  - Empieza con snap ON y grid 32
+  - Plataforma larga de cuadros + orbe amarillo = primer test
+  - Portal ship a mitad de nivel para probar nave
+  - Guarda .lgd a menudo
+  - Si el menu GD "no pega", vuelve a elegir el objeto del menu
+  - Borrador: tecla E, luego click sobre el objeto
+
+================================================================================
+  Lucasta Grid Drawer  |  Absolute Lucasta
+  Create. Prototype. Play.
+================================================================================
