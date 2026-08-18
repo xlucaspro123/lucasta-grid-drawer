@@ -145,6 +145,11 @@ MIT © Lucasta / Absolute Lucasta
 
 ---
 
-## Créditos
+## Enlaces Utiles
+Enlaces útiles
 
-Hecho con **Absolute Lucasta (Grok)**.
+App auto: https://lucasta-grid-drawer.netlify.app
+Solo PC: https://lucasta-grid-drawer.netlify.app/lucasta-grid-drawer.html
+Solo móvil: https://lucasta-grid-drawer.netlify.app/lucasta-grid-drawer-mobile.html
+Forzar PC: https://lucasta-grid-drawer.netlify.app/?v=desktop
+Forzar móvil: https://lucasta-grid-drawer.netlify.app/?v=mobile
