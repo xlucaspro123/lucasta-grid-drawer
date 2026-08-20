@@ -129,16 +129,6 @@ Abre `lucasta-grid-drawer-mobile.html`:
 
 ---
 
-## GitHub Pages
-
-```text
-https://TU_USUARIO.github.io/lucasta-grid-drawer/lucasta-grid-drawer.html
-```
-
-Custom domain: **vacío**. Source = branch `main` / root.
-
----
-
 ## Licencia
 
 MIT © Lucasta / Absolute Lucasta
